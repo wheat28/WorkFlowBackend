@@ -1,7 +1,7 @@
 import com.example.configureRouting
 import com.example.configureSecurity
 import com.example.configureSerialization
-import data.DatabaseFactory
+import data.database.DatabaseFactory
 import io.ktor.server.application.Application
 import io.ktor.server.engine.*
 import io.ktor.server.netty.Netty
