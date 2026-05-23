@@ -1,7 +1,7 @@
-import com.example.configurePostgres
 import com.example.configureRouting
 import com.example.configureSecurity
 import com.example.configureSerialization
+import data.DatabaseFactory
 import io.ktor.server.application.Application
 import io.ktor.server.engine.*
 import io.ktor.server.netty.Netty
@@ -15,9 +15,8 @@ fun main(args: Array<String>) {
     ).start(wait = true)
 }
 
-
 fun Application.rootModule() {
-    configurePostgres()
+    DatabaseFactory.init(this)
     configureSerialization()
     configureSecurity()
     configureRouting()
