@@ -2,3 +2,6 @@
 /.gradle/
 /build/
 /build/classes/kotlin/main/
+
+# Local config with secrets
+src/main/resources/application.conf
