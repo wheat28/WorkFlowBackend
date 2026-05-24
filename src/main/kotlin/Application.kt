@@ -1,6 +1,6 @@
-import com.example.configureRouting
-import com.example.configureSecurity
-import com.example.configureSerialization
+import plugin.configureRouting
+import plugin.configureSecurity
+import plugin.configureSerialization
 import data.database.DatabaseFactory
 import io.ktor.server.application.Application
 import io.ktor.server.engine.*
