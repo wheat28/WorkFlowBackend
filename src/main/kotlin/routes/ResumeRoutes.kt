@@ -4,12 +4,14 @@ import data.dto.resume.ResumeRequest
 import data.dto.resume.WorkExperienceRequest
 import data.repository.ResumeRepository
 import io.ktor.http.*
+import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import java.util.UUID
 
 fun Route.resumeRoutes(resumeRepository: ResumeRepository) {
+    authenticate("auth-jwt") {
     route("/resumes") {
 
         get("/{id}") {
@@ -108,4 +110,5 @@ fun Route.resumeRoutes(resumeRepository: ResumeRepository) {
         }
         call.respond(resumeRepository.getBySeekerID(id))
     }
+    } // authenticate
 }

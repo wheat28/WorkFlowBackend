@@ -5,6 +5,7 @@ import data.dto.employer.EmployerRegisterRequest
 import data.dto.employer.EmployerResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import security.PasswordHasher
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.UUID
@@ -42,7 +43,7 @@ class EmployerRepository {
         transaction {
             EmployerTable.insert {
                 it[email] = request.email
-                it[passwordHash] = request.password
+                it[passwordHash] = PasswordHasher.hash(request.password)
                 it[companyName] = request.companyName
                 it[description] = request.description
                 it[website] = request.website

@@ -3,12 +3,14 @@ package routes
 import data.dto.application.ApplicationRequest
 import data.repository.ApplicationRepository
 import io.ktor.http.*
+import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import java.util.UUID
 
 fun Route.applicationRoutes(applicationRepository: ApplicationRepository) {
+    authenticate("auth-jwt") {
 
     post("/applications") {
         val seekerId = runCatching {
@@ -66,4 +68,6 @@ fun Route.applicationRoutes(applicationRepository: ApplicationRepository) {
         }
         call.respond(applicationRepository.getByVacancyId(id))
     }
+
+    } // authenticate
 }
