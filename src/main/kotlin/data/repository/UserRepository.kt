@@ -5,6 +5,7 @@ import data.dto.user.UserRegisterRequest
 import data.dto.user.UserResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import security.PasswordHasher
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.UUID
@@ -42,7 +43,7 @@ class UserRepository {
         transaction {
             UserTable.insert {
                 it[email] = request.email
-                it[passwordHash] = request.password
+                it[passwordHash] = PasswordHasher.hash(request.password)
                 it[firstName] = request.firstName
                 it[lastName] = request.lastName
                 it[phone] = request.phone
