@@ -1,12 +1,16 @@
 package routes
 
+import data.dto.auth.AuthResponse
 import data.dto.auth.LoginRequest
 import data.dto.user.UserRegisterRequest
 import data.repository.UserRepository
 import io.ktor.http.*
+import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import security.JwtConfig
+import security.PasswordHasher
 import java.util.UUID
 
 fun Route.userRoutes(userRepository: UserRepository) {
@@ -18,6 +22,7 @@ fun Route.userRoutes(userRepository: UserRepository) {
                 call.respond(HttpStatusCode.Conflict, "Email уже занят")
                 return@post
             }
+
             val id = userRepository.create(request)
             call.respond(HttpStatusCode.Created, mapOf("id" to id.toString()))
         }
@@ -25,26 +30,30 @@ fun Route.userRoutes(userRepository: UserRepository) {
         post("/login") {
             val request = call.receive<LoginRequest>()
             val hash = userRepository.getPasswordHash(request.email)
-            if (hash == null || hash != request.password) {
+            if (hash == null || !PasswordHasher.verify(request.password, hash)) {
                 call.respond(HttpStatusCode.Unauthorized, "Неверный email или пароль")
                 return@post
             }
+
             val user = userRepository.findByEmail(request.email)!!
-            call.respond(user)
+            val token = JwtConfig.generateToken(user.id, "SEEKER")
+            call.respond(AuthResponse(token = token, userType = "SEEKER"))
         }
 
-        get("/{id}") {
-            val id = runCatching {
-                UUID.fromString(call.parameters["id"])
-            }.getOrElse {
+        authenticate("auth-jwt") {
+            get("/{id}") {
+                val id = runCatching {
+                    UUID.fromString(call.parameters["id"])
+                }.getOrElse {
 
-                call.respond(HttpStatusCode.BadRequest, "Неверный ID")
-                return@get
+                    call.respond(HttpStatusCode.BadRequest, "Неверный ID")
+                    return@get
+                }
+
+                val user = userRepository.findById(id)
+                    ?: return@get call.respond(HttpStatusCode.NotFound, "Пользователь не найден")
+                call.respond(user)
             }
-
-            val user = userRepository.findById(id)
-                ?: return@get call.respond(HttpStatusCode.NotFound, "Пользователь не найден")
-            call.respond(user)
         }
     }
 }
