@@ -34,4 +34,6 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-java-time:0.55.0")
     implementation("org.postgresql:postgresql:42.7.4")
     implementation("com.zaxxer:HikariCP:6.0.0")
+
+    implementation("at.favre.lib:bcrypt:0.10.2")
 }
