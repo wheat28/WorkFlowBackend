@@ -34,10 +34,14 @@ fun Route.userRoutes(userRepository: UserRepository) {
         }
 
         get("/{id}") {
-            val id = runCatching { UUID.fromString(call.parameters["id"]) }.getOrElse {
+            val id = runCatching {
+                UUID.fromString(call.parameters["id"])
+            }.getOrElse {
+
                 call.respond(HttpStatusCode.BadRequest, "Неверный ID")
                 return@get
             }
+
             val user = userRepository.findById(id)
                 ?: return@get call.respond(HttpStatusCode.NotFound, "Пользователь не найден")
             call.respond(user)

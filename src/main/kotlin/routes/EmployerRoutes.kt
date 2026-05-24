@@ -34,10 +34,14 @@ fun Route.employerRoutes(employerRepository: EmployerRepository) {
         }
 
         get("/{id}") {
-            val id = runCatching { UUID.fromString(call.parameters["id"]) }.getOrElse {
+            val id = runCatching {
+                UUID.fromString(call.parameters["id"])
+            }.getOrElse {
+
                 call.respond(HttpStatusCode.BadRequest, "Неверный ID")
                 return@get
             }
+
             val employer = employerRepository.findById(id)
                 ?: return@get call.respond(HttpStatusCode.NotFound, "Работодатель не найден")
             call.respond(employer)
