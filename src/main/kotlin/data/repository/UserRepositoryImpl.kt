@@ -3,6 +3,7 @@ package data.repository
 import data.database.UserTable
 import data.dto.user.UserRegisterRequest
 import data.dto.user.UserResponse
+import domain.repository.UserRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import security.PasswordHasher
@@ -10,9 +11,9 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.UUID
 
-class UserRepository {
+class UserRepositoryImpl : UserRepository {
 
-    suspend fun findById(id: UUID): UserResponse? = withContext(Dispatchers.IO) {
+    override suspend fun findById(id: UUID): UserResponse? = withContext(Dispatchers.IO) {
         transaction {
             UserTable.selectAll()
                 .where { UserTable.id eq id }
@@ -21,7 +22,7 @@ class UserRepository {
         }
     }
 
-    suspend fun findByEmail(email: String): UserResponse? = withContext(Dispatchers.IO) {
+    override suspend fun findByEmail(email: String): UserResponse? = withContext(Dispatchers.IO) {
         transaction {
             UserTable.selectAll()
                 .where { UserTable.email eq email }
@@ -30,7 +31,7 @@ class UserRepository {
         }
     }
 
-    suspend fun getPasswordHash(email: String): String? = withContext(Dispatchers.IO) {
+    override suspend fun getPasswordHash(email: String): String? = withContext(Dispatchers.IO) {
         transaction {
             UserTable.selectAll()
                 .where { UserTable.email eq email }
@@ -39,7 +40,7 @@ class UserRepository {
         }
     }
 
-    suspend fun create(request: UserRegisterRequest): UUID = withContext(Dispatchers.IO) {
+    override suspend fun create(request: UserRegisterRequest): UUID = withContext(Dispatchers.IO) {
         transaction {
             UserTable.insert {
                 it[email] = request.email
@@ -52,7 +53,7 @@ class UserRepository {
         }
     }
 
-    suspend fun emailExists(email: String): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun emailExists(email: String): Boolean = withContext(Dispatchers.IO) {
         transaction {
             UserTable.selectAll()
                 .where { UserTable.email eq email }

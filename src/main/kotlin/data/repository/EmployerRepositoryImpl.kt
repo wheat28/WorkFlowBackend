@@ -3,6 +3,7 @@ package data.repository
 import data.database.EmployerTable
 import data.dto.employer.EmployerRegisterRequest
 import data.dto.employer.EmployerResponse
+import domain.repository.EmployerRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import security.PasswordHasher
@@ -10,9 +11,9 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.UUID
 
-class EmployerRepository {
+class EmployerRepositoryImpl : EmployerRepository {
 
-    suspend fun findById(id: UUID): EmployerResponse? = withContext(Dispatchers.IO) {
+    override suspend fun findById(id: UUID): EmployerResponse? = withContext(Dispatchers.IO) {
         transaction {
             EmployerTable.selectAll()
                 .where { EmployerTable.id eq id }
@@ -21,7 +22,7 @@ class EmployerRepository {
         }
     }
 
-    suspend fun findByEmail(email: String): EmployerResponse? = withContext(Dispatchers.IO) {
+    override suspend fun findByEmail(email: String): EmployerResponse? = withContext(Dispatchers.IO) {
         transaction {
             EmployerTable.selectAll()
                 .where { EmployerTable.email eq email }
@@ -30,7 +31,7 @@ class EmployerRepository {
         }
     }
 
-    suspend fun getPasswordHash(email: String): String? = withContext(Dispatchers.IO) {
+    override suspend fun getPasswordHash(email: String): String? = withContext(Dispatchers.IO) {
         transaction {
             EmployerTable.selectAll()
                 .where { EmployerTable.email eq email }
@@ -39,7 +40,7 @@ class EmployerRepository {
         }
     }
 
-    suspend fun create(request: EmployerRegisterRequest): UUID = withContext(Dispatchers.IO) {
+    override suspend fun create(request: EmployerRegisterRequest): UUID = withContext(Dispatchers.IO) {
         transaction {
             EmployerTable.insert {
                 it[email] = request.email
@@ -54,7 +55,7 @@ class EmployerRepository {
         }
     }
 
-    suspend fun emailExists(email: String): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun emailExists(email: String): Boolean = withContext(Dispatchers.IO) {
         transaction {
             EmployerTable.selectAll()
                 .where { EmployerTable.email eq email }

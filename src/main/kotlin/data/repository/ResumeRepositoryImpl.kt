@@ -2,6 +2,7 @@ package data.repository
 
 import data.database.*
 import data.dto.resume.*
+import domain.repository.ResumeRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.sql.*
@@ -10,9 +11,9 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.LocalDate
 import java.util.UUID
 
-class ResumeRepository {
+class ResumeRepositoryImpl : ResumeRepository {
 
-    suspend fun getById(id: UUID): ResumeResponse? = withContext(Dispatchers.IO) {
+    override suspend fun getById(id: UUID): ResumeResponse? = withContext(Dispatchers.IO) {
         transaction {
             ResumeTable.selectAll()
                 .where { ResumeTable.id eq id }
@@ -21,7 +22,7 @@ class ResumeRepository {
         }
     }
 
-    suspend fun getBySeekerID(seekerId: UUID): List<ResumeResponse> = withContext(Dispatchers.IO) {
+    override suspend fun getBySeekerID(seekerId: UUID): List<ResumeResponse> = withContext(Dispatchers.IO) {
         transaction {
             ResumeTable.selectAll()
                 .where { ResumeTable.seekerId eq seekerId }
@@ -29,7 +30,16 @@ class ResumeRepository {
         }
     }
 
-    suspend fun create(seekerId: UUID, request: ResumeRequest): UUID = withContext(Dispatchers.IO) {
+    override suspend fun getOwnerId(id: UUID): UUID? = withContext(Dispatchers.IO) {
+        transaction {
+            ResumeTable.selectAll()
+                .where { ResumeTable.id eq id }
+                .singleOrNull()
+                ?.get(ResumeTable.seekerId)
+        }
+    }
+
+    override suspend fun create(seekerId: UUID, request: ResumeRequest): UUID = withContext(Dispatchers.IO) {
         transaction {
             val resumeId = ResumeTable.insert {
                 it[ResumeTable.seekerId] = seekerId
@@ -52,7 +62,7 @@ class ResumeRepository {
         }
     }
 
-    suspend fun update(id: UUID, request: ResumeRequest): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun update(id: UUID, request: ResumeRequest): Boolean = withContext(Dispatchers.IO) {
         transaction {
             val updated = ResumeTable.update({ ResumeTable.id eq id }) {
                 it[title] = request.title
@@ -75,7 +85,7 @@ class ResumeRepository {
         }
     }
 
-    suspend fun delete(id: UUID): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun delete(id: UUID): Boolean = withContext(Dispatchers.IO) {
         transaction {
             ResumeSkillTable.deleteWhere { resumeId eq id }
             WorkExperienceTable.deleteWhere { WorkExperienceTable.resumeId eq id }
@@ -83,7 +93,7 @@ class ResumeRepository {
         }
     }
 
-    suspend fun addWorkExperience(resumeId: UUID, request: WorkExperienceRequest): UUID = withContext(Dispatchers.IO) {
+    override suspend fun addWorkExperience(resumeId: UUID, request: WorkExperienceRequest): UUID = withContext(Dispatchers.IO) {
         transaction {
             WorkExperienceTable.insert {
                 it[WorkExperienceTable.resumeId] = resumeId
@@ -96,7 +106,7 @@ class ResumeRepository {
         }
     }
 
-    suspend fun deleteWorkExperience(id: UUID): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun deleteWorkExperience(id: UUID): Boolean = withContext(Dispatchers.IO) {
         transaction {
             WorkExperienceTable.deleteWhere { WorkExperienceTable.id eq id } > 0
         }

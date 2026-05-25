@@ -3,6 +3,7 @@ package data.repository
 import data.database.*
 import data.dto.vacancy.VacancyRequest
 import data.dto.vacancy.VacancyResponse
+import domain.repository.VacancyRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.sql.*
@@ -10,9 +11,9 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.UUID
 
-class VacancyRepository {
+class VacancyRepositoryImpl : VacancyRepository {
 
-    suspend fun getAll(): List<VacancyResponse> = withContext(Dispatchers.IO) {
+    override suspend fun getAll(): List<VacancyResponse> = withContext(Dispatchers.IO) {
         transaction {
             (VacancyTable innerJoin EmployerTable)
                 .selectAll()
@@ -21,7 +22,7 @@ class VacancyRepository {
         }
     }
 
-    suspend fun getById(id: UUID): VacancyResponse? = withContext(Dispatchers.IO) {
+    override suspend fun getById(id: UUID): VacancyResponse? = withContext(Dispatchers.IO) {
         transaction {
             (VacancyTable innerJoin EmployerTable)
                 .selectAll()
@@ -31,7 +32,7 @@ class VacancyRepository {
         }
     }
 
-    suspend fun getByEmployerId(employerId: UUID): List<VacancyResponse> = withContext(Dispatchers.IO) {
+    override suspend fun getByEmployerId(employerId: UUID): List<VacancyResponse> = withContext(Dispatchers.IO) {
         transaction {
             (VacancyTable innerJoin EmployerTable)
                 .selectAll()
@@ -40,7 +41,16 @@ class VacancyRepository {
         }
     }
 
-    suspend fun create(employerId: UUID, request: VacancyRequest): UUID = withContext(Dispatchers.IO) {
+    override suspend fun getOwnerId(id: UUID): UUID? = withContext(Dispatchers.IO) {
+        transaction {
+            VacancyTable.selectAll()
+                .where { VacancyTable.id eq id }
+                .singleOrNull()
+                ?.get(VacancyTable.employerId)
+        }
+    }
+
+    override suspend fun create(employerId: UUID, request: VacancyRequest): UUID = withContext(Dispatchers.IO) {
         transaction {
             val vacancyId = VacancyTable.insert {
                 it[VacancyTable.employerId] = employerId
@@ -65,7 +75,7 @@ class VacancyRepository {
         }
     }
 
-    suspend fun update(id: UUID, request: VacancyRequest): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun update(id: UUID, request: VacancyRequest): Boolean = withContext(Dispatchers.IO) {
         transaction {
             val updated = VacancyTable.update({ VacancyTable.id eq id }) {
                 it[categoryId] = request.categoryId
@@ -90,7 +100,7 @@ class VacancyRepository {
         }
     }
 
-    suspend fun delete(id: UUID): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun delete(id: UUID): Boolean = withContext(Dispatchers.IO) {
         transaction {
             VacancySkillTable.deleteWhere { vacancyId eq id }
             VacancyTable.deleteWhere { VacancyTable.id eq id } > 0

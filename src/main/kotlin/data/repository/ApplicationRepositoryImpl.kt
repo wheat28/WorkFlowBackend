@@ -3,15 +3,16 @@ package data.repository
 import data.database.*
 import data.dto.application.ApplicationRequest
 import data.dto.application.ApplicationResponse
+import domain.repository.ApplicationRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.UUID
 
-class ApplicationRepository {
+class ApplicationRepositoryImpl : ApplicationRepository {
 
-    suspend fun getBySeekerId(seekerId: UUID): List<ApplicationResponse> = withContext(Dispatchers.IO) {
+    override suspend fun getBySeekerId(seekerId: UUID): List<ApplicationResponse> = withContext(Dispatchers.IO) {
         transaction {
             ApplicationTable
                 .join(UserTable, JoinType.INNER, ApplicationTable.seekerId, UserTable.id)
@@ -22,7 +23,7 @@ class ApplicationRepository {
         }
     }
 
-    suspend fun getByVacancyId(vacancyId: UUID): List<ApplicationResponse> = withContext(Dispatchers.IO) {
+    override suspend fun getByVacancyId(vacancyId: UUID): List<ApplicationResponse> = withContext(Dispatchers.IO) {
         transaction {
             ApplicationTable
                 .join(UserTable, JoinType.INNER, ApplicationTable.seekerId, UserTable.id)
@@ -33,7 +34,7 @@ class ApplicationRepository {
         }
     }
 
-    suspend fun create(seekerId: UUID, request: ApplicationRequest): UUID = withContext(Dispatchers.IO) {
+    override suspend fun create(seekerId: UUID, request: ApplicationRequest): UUID = withContext(Dispatchers.IO) {
         transaction {
             ApplicationTable.insert {
                 it[ApplicationTable.seekerId] = seekerId
@@ -45,7 +46,7 @@ class ApplicationRepository {
         }
     }
 
-    suspend fun updateStatus(id: UUID, status: String): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun updateStatus(id: UUID, status: String): Boolean = withContext(Dispatchers.IO) {
         transaction {
             ApplicationTable.update({ ApplicationTable.id eq id }) {
                 it[ApplicationTable.status] = status
