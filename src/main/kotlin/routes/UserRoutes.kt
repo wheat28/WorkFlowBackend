@@ -1,16 +1,12 @@
 package routes
 
-import data.dto.auth.AuthResponse
-import data.dto.auth.LoginRequest
 import data.dto.user.UserRegisterRequest
-import data.repository.UserRepository
+import domain.repository.UserRepository
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import security.JwtConfig
-import security.PasswordHasher
 import java.util.UUID
 
 fun Route.userRoutes(userRepository: UserRepository) {
@@ -27,25 +23,11 @@ fun Route.userRoutes(userRepository: UserRepository) {
             call.respond(HttpStatusCode.Created, mapOf("id" to id.toString()))
         }
 
-        post("/login") {
-            val request = call.receive<LoginRequest>()
-            val hash = userRepository.getPasswordHash(request.email)
-            if (hash == null || !PasswordHasher.verify(request.password, hash)) {
-                call.respond(HttpStatusCode.Unauthorized, "Неверный email или пароль")
-                return@post
-            }
-
-            val user = userRepository.findByEmail(request.email)!!
-            val token = JwtConfig.generateToken(user.id, "SEEKER")
-            call.respond(AuthResponse(token = token, userType = "SEEKER"))
-        }
-
         authenticate("auth-jwt") {
             get("/{id}") {
                 val id = runCatching {
                     UUID.fromString(call.parameters["id"])
                 }.getOrElse {
-
                     call.respond(HttpStatusCode.BadRequest, "Неверный ID")
                     return@get
                 }

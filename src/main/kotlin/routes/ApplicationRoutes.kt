@@ -1,7 +1,7 @@
 package routes
 
 import data.dto.application.ApplicationRequest
-import data.repository.ApplicationRepository
+import domain.repository.ApplicationRepository
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*

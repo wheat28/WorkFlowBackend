@@ -1,15 +1,22 @@
 package routes
 
 import data.dto.vacancy.VacancyRequest
-import data.repository.VacancyRepository
+import domain.repository.VacancyRepository
+import domain.usecase.vacancy.DeleteVacancyUseCase
+import domain.usecase.vacancy.UpdateVacancyUseCase
 import io.ktor.http.*
 import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import java.util.UUID
 
-fun Route.vacancyRoutes(vacancyRepository: VacancyRepository) {
+fun Route.vacancyRoutes(
+    vacancyRepository: VacancyRepository,
+    updateVacancyUseCase: UpdateVacancyUseCase,
+    deleteVacancyUseCase: DeleteVacancyUseCase
+) {
     route("/vacancies") {
 
         get {
@@ -20,7 +27,6 @@ fun Route.vacancyRoutes(vacancyRepository: VacancyRepository) {
             val id = runCatching {
                 UUID.fromString(call.parameters["id"])
             }.getOrElse {
-
                 call.respond(HttpStatusCode.BadRequest, "Неверный ID")
                 return@get
             }
@@ -35,7 +41,6 @@ fun Route.vacancyRoutes(vacancyRepository: VacancyRepository) {
                 val employerId = runCatching {
                     UUID.fromString(call.request.headers["EmployerId"])
                 }.getOrElse {
-
                     call.respond(HttpStatusCode.BadRequest, "Не указан EmployerId")
                     return@post
                 }
@@ -46,44 +51,44 @@ fun Route.vacancyRoutes(vacancyRepository: VacancyRepository) {
             }
 
             put("/{id}") {
-                val id = runCatching {
+                val vacancyId = runCatching {
                     UUID.fromString(call.parameters["id"])
                 }.getOrElse {
-
                     call.respond(HttpStatusCode.BadRequest, "Неверный ID")
                     return@put
                 }
 
+                val callerId = UUID.fromString(
+                    call.principal<JWTPrincipal>()!!.payload.getClaim("userId").asString()
+                )
+
                 val request = call.receive<VacancyRequest>()
-                val updated = vacancyRepository.update(id, request)
-                if (updated) call.respond(HttpStatusCode.OK)
-                else call.respond(HttpStatusCode.NotFound, "Вакансия не найдена")
+                when (updateVacancyUseCase(callerId, vacancyId, request)) {
+                    is UpdateVacancyUseCase.Result.Success -> call.respond(HttpStatusCode.OK)
+                    is UpdateVacancyUseCase.Result.Forbidden -> call.respond(HttpStatusCode.Forbidden, "Нет доступа")
+                    is UpdateVacancyUseCase.Result.NotFound -> call.respond(HttpStatusCode.NotFound, "Вакансия не найдена")
+                }
             }
 
             delete("/{id}") {
-                val id = runCatching {
+                val vacancyId = runCatching {
                     UUID.fromString(call.parameters["id"])
                 }.getOrElse {
-
                     call.respond(HttpStatusCode.BadRequest, "Неверный ID")
                     return@delete
                 }
 
-                val deleted = vacancyRepository.delete(id)
-                if (deleted) call.respond(HttpStatusCode.OK)
-                else call.respond(HttpStatusCode.NotFound, "Вакансия не найдена")
-            }
+                val callerId = UUID.fromString(
+                    call.principal<JWTPrincipal>()!!.payload.getClaim("userId").asString()
+                )
 
-            get("/{id}/applications") {
-                val id = runCatching {
-                    UUID.fromString(call.parameters["id"])
-                }.getOrElse {
-
-                    call.respond(HttpStatusCode.BadRequest, "Неверный ID")
-                    return@get
+                when (deleteVacancyUseCase(callerId, vacancyId)) {
+                    is DeleteVacancyUseCase.Result.Success -> call.respond(HttpStatusCode.OK)
+                    is DeleteVacancyUseCase.Result.Forbidden -> call.respond(HttpStatusCode.Forbidden, "Нет доступа")
+                    is DeleteVacancyUseCase.Result.NotFound -> call.respond(HttpStatusCode.NotFound, "Вакансия не найдена")
                 }
-                call.respond(vacancyRepository.getByEmployerId(id))
             }
-        }
+
+}
     }
 }
