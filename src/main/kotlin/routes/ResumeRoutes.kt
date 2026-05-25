@@ -39,13 +39,9 @@ fun Route.resumeRoutes(
             }
 
             post {
-                val seekerId = runCatching {
-                    UUID.fromString(call.request.headers["SeekerId"])
-                }.getOrElse {
-                    call.respond(HttpStatusCode.BadRequest, "Не указан SeekerId")
-                    return@post
-                }
-
+                val seekerId = UUID.fromString(
+                    call.principal<JWTPrincipal>()!!.payload.getClaim("userId").asString()
+                )
                 val request = call.receive<ResumeRequest>()
                 val id = resumeRepository.create(seekerId, request)
                 call.respond(HttpStatusCode.Created, mapOf("id" to id.toString()))

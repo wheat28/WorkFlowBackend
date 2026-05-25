@@ -38,13 +38,9 @@ fun Route.vacancyRoutes(
 
         authenticate("auth-jwt") {
             post {
-                val employerId = runCatching {
-                    UUID.fromString(call.request.headers["EmployerId"])
-                }.getOrElse {
-                    call.respond(HttpStatusCode.BadRequest, "Не указан EmployerId")
-                    return@post
-                }
-
+                val employerId = UUID.fromString(
+                    call.principal<JWTPrincipal>()!!.payload.getClaim("userId").asString()
+                )
                 val request = call.receive<VacancyRequest>()
                 val id = vacancyRepository.create(employerId, request)
                 call.respond(HttpStatusCode.Created, mapOf("id" to id.toString()))

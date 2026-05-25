@@ -4,6 +4,7 @@ import data.dto.application.ApplicationRequest
 import domain.repository.ApplicationRepository
 import io.ktor.http.*
 import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -13,14 +14,9 @@ fun Route.applicationRoutes(applicationRepository: ApplicationRepository) {
     authenticate("auth-jwt") {
 
     post("/applications") {
-        val seekerId = runCatching {
-            UUID.fromString(call.request.headers["SeekerId"])
-        }.getOrElse {
-
-            call.respond(HttpStatusCode.BadRequest, "Не указан SeekerId")
-            return@post
-        }
-
+        val seekerId = UUID.fromString(
+            call.principal<JWTPrincipal>()!!.payload.getClaim("userId").asString()
+        )
         val request = call.receive<ApplicationRequest>()
         val id = applicationRepository.create(seekerId, request)
         call.respond(HttpStatusCode.Created, mapOf("id" to id.toString()))
