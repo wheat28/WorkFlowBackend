@@ -15,6 +15,7 @@ fun Application.configureRouting() {
     val vacancyRepository = VacancyRepositoryImpl()
     val resumeRepository = ResumeRepositoryImpl()
     val applicationRepository = ApplicationRepositoryImpl()
+    val favoriteRepository = FavoriteRepositoryImpl()
 
     val loginUseCase = LoginUseCase(userRepository, employerRepository)
 
@@ -37,5 +38,6 @@ fun Application.configureRouting() {
         vacancyRoutes(vacancyRepository, updateVacancyUseCase, deleteVacancyUseCase)
         resumeRoutes(resumeRepository, updateResumeUseCase, deleteResumeUseCase, addWorkExperienceUseCase, deleteWorkExperienceUseCase)
         applicationRoutes(applicationRepository)
+        favoriteRoutes(favoriteRepository)
     }
 }

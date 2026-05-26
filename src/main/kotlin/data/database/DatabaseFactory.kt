@@ -40,7 +40,8 @@ object DatabaseFactory {
                 ApplicationTable,
                 VacancySkillTable,
                 ResumeSkillTable,
-                RefreshTokenTable
+                RefreshTokenTable,
+                FavoriteTable
             )
         }
 
