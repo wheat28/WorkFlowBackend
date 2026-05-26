@@ -10,4 +10,5 @@ interface ApplicationRepository {
     suspend fun create(seekerId: UUID, request: ApplicationRequest): UUID
     suspend fun updateStatus(id: UUID, status: String): Boolean
     suspend fun isApplied(seekerId: UUID, vacancyId: UUID): Boolean
+    suspend fun delete(id: UUID): Boolean
 }

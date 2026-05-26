@@ -7,6 +7,7 @@ import domain.repository.ApplicationRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.UUID
 
@@ -53,6 +54,12 @@ class ApplicationRepositoryImpl : ApplicationRepository {
             ApplicationTable.update({ ApplicationTable.id eq id }) {
                 it[ApplicationTable.status] = status
             } > 0
+        }
+    }
+
+    override suspend fun delete(id: UUID): Boolean = withContext(Dispatchers.IO) {
+        transaction {
+            ApplicationTable.deleteWhere { ApplicationTable.id eq id } > 0
         }
     }
 

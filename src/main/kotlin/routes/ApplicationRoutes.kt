@@ -65,6 +65,18 @@ fun Route.applicationRoutes(applicationRepository: ApplicationRepository) {
         call.respond(applicationRepository.getByVacancyId(id))
     }
 
+    delete("/applications/{id}") {
+        val id = runCatching {
+            UUID.fromString(call.parameters["id"])
+        }.getOrElse {
+            call.respond(HttpStatusCode.BadRequest, "Неверный ID")
+            return@delete
+        }
+        val deleted = applicationRepository.delete(id)
+        if (deleted) call.respond(HttpStatusCode.OK)
+        else call.respond(HttpStatusCode.NotFound, "Отклик не найден")
+    }
+
     get("/applications/check/{vacancyId}") {
         val seekerId = UUID.fromString(
             call.principal<JWTPrincipal>()!!.payload.getClaim("userId").asString()
