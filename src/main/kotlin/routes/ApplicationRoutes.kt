@@ -65,5 +65,18 @@ fun Route.applicationRoutes(applicationRepository: ApplicationRepository) {
         call.respond(applicationRepository.getByVacancyId(id))
     }
 
+    get("/applications/check/{vacancyId}") {
+        val seekerId = UUID.fromString(
+            call.principal<JWTPrincipal>()!!.payload.getClaim("userId").asString()
+        )
+        val vacancyId = runCatching {
+            UUID.fromString(call.parameters["vacancyId"])
+        }.getOrElse {
+            call.respond(HttpStatusCode.BadRequest, "Неверный ID вакансии")
+            return@get
+        }
+        call.respond(mapOf("applied" to applicationRepository.isApplied(seekerId, vacancyId)))
+    }
+
     } // authenticate
 }

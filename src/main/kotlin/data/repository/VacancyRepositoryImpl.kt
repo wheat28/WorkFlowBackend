@@ -7,6 +7,7 @@ import domain.repository.VacancyRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.UUID
@@ -18,6 +19,7 @@ class VacancyRepositoryImpl : VacancyRepository {
             (VacancyTable innerJoin EmployerTable)
                 .selectAll()
                 .where { VacancyTable.isActive eq true }
+                .orderBy(VacancyTable.createdAt to SortOrder.DESC)
                 .map { it.toVacancyResponse() }
         }
     }

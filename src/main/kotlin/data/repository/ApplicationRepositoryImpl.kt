@@ -19,6 +19,7 @@ class ApplicationRepositoryImpl : ApplicationRepository {
                 .join(VacancyTable, JoinType.INNER, ApplicationTable.vacancyId, VacancyTable.id)
                 .selectAll()
                 .where { ApplicationTable.seekerId eq seekerId }
+                .orderBy(ApplicationTable.createdAt to SortOrder.DESC)
                 .map { it.toApplicationResponse() }
         }
     }
@@ -30,6 +31,7 @@ class ApplicationRepositoryImpl : ApplicationRepository {
                 .join(VacancyTable, JoinType.INNER, ApplicationTable.vacancyId, VacancyTable.id)
                 .selectAll()
                 .where { ApplicationTable.vacancyId eq vacancyId }
+                .orderBy(ApplicationTable.createdAt to SortOrder.DESC)
                 .map { it.toApplicationResponse() }
         }
     }
@@ -51,6 +53,14 @@ class ApplicationRepositoryImpl : ApplicationRepository {
             ApplicationTable.update({ ApplicationTable.id eq id }) {
                 it[ApplicationTable.status] = status
             } > 0
+        }
+    }
+
+    override suspend fun isApplied(seekerId: UUID, vacancyId: UUID): Boolean = withContext(Dispatchers.IO) {
+        transaction {
+            ApplicationTable.selectAll()
+                .where { (ApplicationTable.seekerId eq seekerId) and (ApplicationTable.vacancyId eq vacancyId) }
+                .count() > 0
         }
     }
 
