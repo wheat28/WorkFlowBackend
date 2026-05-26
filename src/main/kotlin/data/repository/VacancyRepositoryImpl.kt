@@ -104,6 +104,8 @@ class VacancyRepositoryImpl : VacancyRepository {
 
     override suspend fun delete(id: UUID): Boolean = withContext(Dispatchers.IO) {
         transaction {
+            FavoriteTable.deleteWhere { FavoriteTable.vacancyId eq id }
+            ApplicationTable.deleteWhere { ApplicationTable.vacancyId eq id }
             VacancySkillTable.deleteWhere { vacancyId eq id }
             VacancyTable.deleteWhere { VacancyTable.id eq id } > 0
         }
