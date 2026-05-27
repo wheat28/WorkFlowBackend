@@ -3,12 +3,13 @@ package data.repository
 import data.database.EmployerTable
 import data.dto.employer.EmployerRegisterRequest
 import data.dto.employer.EmployerResponse
+import data.dto.employer.EmployerUpdateRequest
 import domain.repository.EmployerRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import security.PasswordHasher
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
+import security.PasswordHasher
 import java.util.UUID
 
 class EmployerRepositoryImpl : EmployerRepository {
@@ -52,6 +53,19 @@ class EmployerRepositoryImpl : EmployerRepository {
                 it[industry] = request.industry
                 it[phone] = request.phone
             }[EmployerTable.id]
+        }
+    }
+
+    override suspend fun update(id: UUID, request: EmployerUpdateRequest): Boolean = withContext(Dispatchers.IO) {
+        transaction {
+            EmployerTable.update({ EmployerTable.id eq id }) {
+                it[companyName] = request.companyName
+                it[description] = request.description
+                it[website] = request.website
+                it[city] = request.city
+                it[industry] = request.industry
+                it[phone] = request.phone
+            } > 0
         }
     }
 
