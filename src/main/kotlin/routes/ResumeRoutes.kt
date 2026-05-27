@@ -1,6 +1,7 @@
 package routes
 
 import data.dto.resume.ResumeRequest
+import data.dto.resume.ResumeStatusRequest
 import data.dto.resume.WorkExperienceRequest
 import domain.repository.ResumeRepository
 import domain.usecase.resume.AddWorkExperienceUseCase
@@ -65,6 +66,27 @@ fun Route.resumeRoutes(
                     is UpdateResumeUseCase.Result.Forbidden -> call.respond(HttpStatusCode.Forbidden, "Нет доступа")
                     is UpdateResumeUseCase.Result.NotFound -> call.respond(HttpStatusCode.NotFound, "Резюме не найдено")
                 }
+            }
+
+            patch("/{id}/status") {
+                val resumeId = runCatching {
+                    UUID.fromString(call.parameters["id"])
+                }.getOrElse {
+                    call.respond(HttpStatusCode.BadRequest, "Неверный ID")
+                    return@patch
+                }
+
+                val callerId = UUID.fromString(
+                    call.principal<JWTPrincipal>()!!.payload.getClaim("userId").asString()
+                )
+
+                val ownerId = resumeRepository.getOwnerId(resumeId)
+                    ?: return@patch call.respond(HttpStatusCode.NotFound, "Резюме не найдено")
+                if (ownerId != callerId) return@patch call.respond(HttpStatusCode.Forbidden, "Нет доступа")
+
+                val request = call.receive<ResumeStatusRequest>()
+                resumeRepository.setActive(resumeId, request.isActive)
+                call.respond(HttpStatusCode.OK)
             }
 
             delete("/{id}") {

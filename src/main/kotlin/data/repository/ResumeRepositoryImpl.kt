@@ -15,18 +15,29 @@ class ResumeRepositoryImpl : ResumeRepository {
 
     override suspend fun getById(id: UUID): ResumeResponse? = withContext(Dispatchers.IO) {
         transaction {
-            ResumeTable.selectAll()
+            val row = ResumeTable.selectAll()
                 .where { ResumeTable.id eq id }
-                .singleOrNull()
-                ?.toResumeResponse()
+                .singleOrNull() ?: return@transaction null
+            val skills = skillsFor(listOf(id))[id] ?: emptyList()
+            val experiences = experiencesFor(listOf(id))[id] ?: emptyList()
+            row.toResumeResponse(skills, experiences)
         }
     }
 
     override suspend fun getBySeekerID(seekerId: UUID): List<ResumeResponse> = withContext(Dispatchers.IO) {
         transaction {
-            ResumeTable.selectAll()
+            val rows = ResumeTable.selectAll()
                 .where { ResumeTable.seekerId eq seekerId }
-                .map { it.toResumeResponse() }
+                .toList()
+            val ids = rows.map { it[ResumeTable.id] }
+            val skills = skillsFor(ids)
+            val experiences = experiencesFor(ids)
+            rows.map {
+                it.toResumeResponse(
+                    skills[it[ResumeTable.id]] ?: emptyList(),
+                    experiences[it[ResumeTable.id]] ?: emptyList()
+                )
+            }
         }
     }
 
@@ -85,6 +96,14 @@ class ResumeRepositoryImpl : ResumeRepository {
         }
     }
 
+    override suspend fun setActive(id: UUID, isActive: Boolean): Boolean = withContext(Dispatchers.IO) {
+        transaction {
+            ResumeTable.update({ ResumeTable.id eq id }) {
+                it[ResumeTable.isActive] = isActive
+            } > 0
+        }
+    }
+
     override suspend fun delete(id: UUID): Boolean = withContext(Dispatchers.IO) {
         transaction {
             ResumeSkillTable.deleteWhere { resumeId eq id }
@@ -112,17 +131,19 @@ class ResumeRepositoryImpl : ResumeRepository {
         }
     }
 
-    private fun ResultRow.toResumeResponse(): ResumeResponse {
-        val id = this[ResumeTable.id]
-
-        val skills = (ResumeSkillTable innerJoin SkillTable)
+    private fun skillsFor(ids: List<UUID>): Map<UUID, List<String>> {
+        if (ids.isEmpty()) return emptyMap()
+        return (ResumeSkillTable innerJoin SkillTable)
             .selectAll()
-            .where { ResumeSkillTable.resumeId eq id }
-            .map { it[SkillTable.name] }
+            .where { ResumeSkillTable.resumeId inList ids }
+            .groupBy({ it[ResumeSkillTable.resumeId] }) { it[SkillTable.name] }
+    }
 
-        val workExperiences = WorkExperienceTable.selectAll()
-            .where { WorkExperienceTable.resumeId eq id }
-            .map { row ->
+    private fun experiencesFor(ids: List<UUID>): Map<UUID, List<WorkExperienceResponse>> {
+        if (ids.isEmpty()) return emptyMap()
+        return WorkExperienceTable.selectAll()
+            .where { WorkExperienceTable.resumeId inList ids }
+            .groupBy({ it[WorkExperienceTable.resumeId] }) { row ->
                 WorkExperienceResponse(
                     id = row[WorkExperienceTable.id].toString(),
                     companyName = row[WorkExperienceTable.companyName],
@@ -132,20 +153,20 @@ class ResumeRepositoryImpl : ResumeRepository {
                     description = row[WorkExperienceTable.description]
                 )
             }
-
-        return ResumeResponse(
-            id = id.toString(),
-            seekerId = this[ResumeTable.seekerId].toString(),
-            title = this[ResumeTable.title],
-            position = this[ResumeTable.position],
-            salaryExpected = this[ResumeTable.salaryExpected],
-            currency = this[ResumeTable.currency],
-            city = this[ResumeTable.city],
-            employmentType = this[ResumeTable.employmentType],
-            about = this[ResumeTable.about],
-            isActive = this[ResumeTable.isActive],
-            skills = skills,
-            workExperiences = workExperiences
-        )
     }
+
+    private fun ResultRow.toResumeResponse(skills: List<String>, workExperiences: List<WorkExperienceResponse>) = ResumeResponse(
+        id = this[ResumeTable.id].toString(),
+        seekerId = this[ResumeTable.seekerId].toString(),
+        title = this[ResumeTable.title],
+        position = this[ResumeTable.position],
+        salaryExpected = this[ResumeTable.salaryExpected],
+        currency = this[ResumeTable.currency],
+        city = this[ResumeTable.city],
+        employmentType = this[ResumeTable.employmentType],
+        about = this[ResumeTable.about],
+        isActive = this[ResumeTable.isActive],
+        skills = skills,
+        workExperiences = workExperiences
+    )
 }
