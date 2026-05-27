@@ -15,7 +15,6 @@ class CityService(private val connection: Connection) {
         private const val INSERT_CITY = "INSERT INTO cities (name, population) VALUES (?, ?)"
         private const val UPDATE_CITY = "UPDATE cities SET name = ?, population = ? WHERE id = ?"
         private const val DELETE_CITY = "DELETE FROM cities WHERE id = ?"
-
     }
 
     init {
@@ -23,7 +22,6 @@ class CityService(private val connection: Connection) {
         statement.executeUpdate(CREATE_TABLE_CITIES)
     }
 
-    // Create new city
     suspend fun create(city: City): Int = withContext(Dispatchers.IO) {
         val statement = connection.prepareStatement(INSERT_CITY, Statement.RETURN_GENERATED_KEYS)
         statement.setString(1, city.name)
@@ -38,7 +36,6 @@ class CityService(private val connection: Connection) {
         }
     }
 
-    // Read a city
     suspend fun read(id: Int): City = withContext(Dispatchers.IO) {
         val statement = connection.prepareStatement(SELECT_CITY_BY_ID)
         statement.setInt(1, id)
@@ -53,7 +50,6 @@ class CityService(private val connection: Connection) {
         }
     }
 
-    // Update a city
     suspend fun update(id: Int, city: City) = withContext(Dispatchers.IO) {
         val statement = connection.prepareStatement(UPDATE_CITY)
         statement.setString(1, city.name)
@@ -62,7 +58,6 @@ class CityService(private val connection: Connection) {
         statement.executeUpdate()
     }
 
-    // Delete a city
     suspend fun delete(id: Int) = withContext(Dispatchers.IO) {
         val statement = connection.prepareStatement(DELETE_CITY)
         statement.setInt(1, id)
