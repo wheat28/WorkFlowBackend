@@ -11,7 +11,7 @@ class LoginUseCase(
 ) {
 
     sealed class Result {
-        data class Success(val token: String, val userType: String, val userId: String) : Result()
+        data class Success(val token: String, val userType: String, val userId: String, val displayName: String) : Result()
         object InvalidCredentials : Result()
     }
 
@@ -19,13 +19,13 @@ class LoginUseCase(
         val seekerHash = userRepository.getPasswordHash(email)
         if (seekerHash != null && PasswordHasher.verify(password, seekerHash)) {
             val user = userRepository.findByEmail(email)!!
-            return Result.Success(JwtConfig.generateToken(user.id, "SEEKER"), "SEEKER", user.id)
+            return Result.Success(JwtConfig.generateToken(user.id, "SEEKER"), "SEEKER", user.id, "${user.firstName} ${user.lastName}")
         }
 
         val employerHash = employerRepository.getPasswordHash(email)
         if (employerHash != null && PasswordHasher.verify(password, employerHash)) {
             val employer = employerRepository.findByEmail(email)!!
-            return Result.Success(JwtConfig.generateToken(employer.id, "EMPLOYER"), "EMPLOYER", employer.id)
+            return Result.Success(JwtConfig.generateToken(employer.id, "EMPLOYER"), "EMPLOYER", employer.id, employer.companyName)
         }
 
         return Result.InvalidCredentials

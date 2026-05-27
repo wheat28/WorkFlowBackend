@@ -13,7 +13,7 @@ fun Route.authRoutes(loginUseCase: LoginUseCase) {
         val request = call.receive<LoginRequest>()
         when (val result = loginUseCase(request.email, request.password)) {
             is LoginUseCase.Result.Success ->
-                call.respond(AuthResponse(token = result.token, userType = result.userType, userId = result.userId))
+                call.respond(AuthResponse(token = result.token, userType = result.userType, userId = result.userId, displayName = result.displayName))
             is LoginUseCase.Result.InvalidCredentials ->
                 call.respond(HttpStatusCode.Unauthorized, "Неверный email или пароль")
         }
