@@ -1,6 +1,7 @@
 package routes
 
 import data.dto.vacancy.VacancyRequest
+import data.dto.vacancy.VacancyStatusRequest
 import domain.repository.VacancyRepository
 import domain.usecase.vacancy.DeleteVacancyUseCase
 import domain.usecase.vacancy.UpdateVacancyUseCase
@@ -64,6 +65,24 @@ fun Route.vacancyRoutes(
                     is UpdateVacancyUseCase.Result.Forbidden -> call.respond(HttpStatusCode.Forbidden, "Нет доступа")
                     is UpdateVacancyUseCase.Result.NotFound -> call.respond(HttpStatusCode.NotFound, "Вакансия не найдена")
                 }
+            }
+
+            patch("/{id}/status") {
+                val vacancyId = runCatching {
+                    UUID.fromString(call.parameters["id"])
+                }.getOrElse {
+                    call.respond(HttpStatusCode.BadRequest, "Неверный ID")
+                    return@patch
+                }
+                val callerId = UUID.fromString(
+                    call.principal<JWTPrincipal>()!!.payload.getClaim("userId").asString()
+                )
+                val ownerId = vacancyRepository.getOwnerId(vacancyId)
+                    ?: return@patch call.respond(HttpStatusCode.NotFound, "Вакансия не найдена")
+                if (ownerId != callerId) return@patch call.respond(HttpStatusCode.Forbidden, "Нет доступа")
+                val request = call.receive<VacancyStatusRequest>()
+                vacancyRepository.setActive(vacancyId, request.isActive)
+                call.respond(HttpStatusCode.OK)
             }
 
             delete("/{id}") {
