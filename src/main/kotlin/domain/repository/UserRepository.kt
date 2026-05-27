@@ -2,6 +2,7 @@ package domain.repository
 
 import data.dto.user.UserRegisterRequest
 import data.dto.user.UserResponse
+import data.dto.user.UserUpdateRequest
 import java.util.UUID
 
 interface UserRepository {
@@ -10,4 +11,5 @@ interface UserRepository {
     suspend fun getPasswordHash(email: String): String?
     suspend fun create(request: UserRegisterRequest): UUID
     suspend fun emailExists(email: String): Boolean
+    suspend fun update(id: UUID, request: UserUpdateRequest): Boolean
 }
