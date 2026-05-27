@@ -37,34 +37,40 @@ class FavoriteRepositoryImpl : FavoriteRepository {
 
     override suspend fun getBySeekerId(seekerId: UUID): List<VacancyResponse> = withContext(Dispatchers.IO) {
         transaction {
-            (FavoriteTable
+            val rows = (FavoriteTable
                 .join(VacancyTable, JoinType.INNER, FavoriteTable.vacancyId, VacancyTable.id)
                 .join(EmployerTable, JoinType.INNER, VacancyTable.employerId, EmployerTable.id))
                 .selectAll()
                 .where { FavoriteTable.seekerId eq seekerId }
-                .map { row ->
-                    val vacancyId = row[VacancyTable.id]
-                    val skills = (VacancySkillTable innerJoin SkillTable)
-                        .selectAll()
-                        .where { VacancySkillTable.vacancyId eq vacancyId }
-                        .map { it[SkillTable.name] }
-                    VacancyResponse(
-                        id = vacancyId.toString(),
-                        employerId = row[VacancyTable.employerId].toString(),
-                        companyName = row[EmployerTable.companyName],
-                        categoryId = row[VacancyTable.categoryId],
-                        title = row[VacancyTable.title],
-                        description = row[VacancyTable.description],
-                        salaryFrom = row[VacancyTable.salaryFrom],
-                        salaryTo = row[VacancyTable.salaryTo],
-                        currency = row[VacancyTable.currency],
-                        city = row[VacancyTable.city],
-                        employmentType = row[VacancyTable.employmentType],
-                        experience = row[VacancyTable.experience],
-                        isActive = row[VacancyTable.isActive],
-                        skills = skills
-                    )
-                }
+                .toList()
+
+            val vacancyIds = rows.map { it[VacancyTable.id] }
+            val skillsByVacancy = if (vacancyIds.isEmpty()) emptyMap() else {
+                (VacancySkillTable innerJoin SkillTable)
+                    .selectAll()
+                    .where { VacancySkillTable.vacancyId inList vacancyIds }
+                    .groupBy({ it[VacancySkillTable.vacancyId] }) { it[SkillTable.name] }
+            }
+
+            rows.map { row ->
+                val vacancyId = row[VacancyTable.id]
+                VacancyResponse(
+                    id = vacancyId.toString(),
+                    employerId = row[VacancyTable.employerId].toString(),
+                    companyName = row[EmployerTable.companyName],
+                    categoryId = row[VacancyTable.categoryId],
+                    title = row[VacancyTable.title],
+                    description = row[VacancyTable.description],
+                    salaryFrom = row[VacancyTable.salaryFrom],
+                    salaryTo = row[VacancyTable.salaryTo],
+                    currency = row[VacancyTable.currency],
+                    city = row[VacancyTable.city],
+                    employmentType = row[VacancyTable.employmentType],
+                    experience = row[VacancyTable.experience],
+                    isActive = row[VacancyTable.isActive],
+                    skills = skillsByVacancy[vacancyId] ?: emptyList()
+                )
+            }
         }
     }
 
