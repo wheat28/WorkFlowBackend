@@ -106,6 +106,7 @@ class ResumeRepositoryImpl : ResumeRepository {
 
     override suspend fun delete(id: UUID): Boolean = withContext(Dispatchers.IO) {
         transaction {
+            ApplicationTable.deleteWhere { ApplicationTable.resumeId eq id }
             ResumeSkillTable.deleteWhere { resumeId eq id }
             WorkExperienceTable.deleteWhere { WorkExperienceTable.resumeId eq id }
             ResumeTable.deleteWhere { ResumeTable.id eq id } > 0
